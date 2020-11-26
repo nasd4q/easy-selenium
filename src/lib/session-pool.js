@@ -2,13 +2,18 @@ const SeleniumServer = require("./selenium-server");
 const Session = require("./session");
 const SessionFactory = require("./session-factory");
 const UddStore = require("./udd-store");
+const { EventEmitter } = require('events');
+
+const EVENTS = {
+    refreshed: "Pool just refreshed"
+};
 
 /**
  * Manages sessions associated with a SeleniuServer and a UddStorage.
  */
-class SessionPool {
+class SessionPool extends EventEmitter {
     /**
-     * private
+     * Just assigns construction params to instance fields.
      * 
      * @param {SeleniumServer} server 
      * @param {UddStore} store 
@@ -19,6 +24,7 @@ class SessionPool {
      * acceptable and can be made available or not
      */
     constructor(server, store, factory, min, max, check) {
+        super();
         this.server = server;
         this.store = store;
         this.factory = factory;
@@ -37,6 +43,10 @@ class SessionPool {
 
     /**
      * Gets the pool ready with at least `this.min` sessions in place
+     * 
+     * Ensures the selenium server is on, retrieves opened sessions if any and 
+     * customizes them, then checks them, and kills those that do not check, 
+     * collect those that check. Finally, calls `this._ensureMin`.
      */
     async init() {
         await this.server.start().then(ready => {
@@ -46,62 +56,55 @@ class SessionPool {
         });
         //TODO delete this reuse of existing session if not for testing...
         await this.server.list().then(sessions => Promise.all(sessions.map(async(s) => {
-            if (await this.check(s)) {
+            let checked = false;
+            try {
+                s = await this.factory.customize(s);
+                checked = await this.check(s)
+            } catch (err) {
+                checked = false;
+            }
+            if (checked) {
                 this.sessions.push(s);
             } else {
                 await s.driver().quit();
             }
         })));
 
-        await this._ensureMin();
+        let p = this._ensureMin();
+        return p;
     }
 
     /**
-     * Should return an available session if possible, 
-     * TODO or throw an error / or put on queue ?
+     * Returns a checked and ready Session if one available, else returns undefined.
      * @returns { Session }
      */
     getOne() {
-        if (!this.__ensuringMin) {
-            this.__ensuringMin = true;
-            setImmediate(() => this._ensureMin());
+        let s = this.sessions.shift();
+        if (s) {
+            if (!this.__ensuringMin) {
+                this.__ensuringMin = true;
+                setTimeout(() => this._ensureMin(), 5000);
+            }
+            this._onLoanCount++;
         }
-        this._onLoanCount++;
-        return this.sessions.shift();
+        return s;
     }
 
-    release(session) {
+    giveBack(session) {
         this.returnedSessions.push(session);
         this._onLoanCount--;
         if (!this.__ensuringMin) {
             this.__ensuringMin = true;
-            setImmediate(() => this._ensureMin());
+            setTimeout(() => this._ensureMin(), 5000);
         }
     }
 
-    /**
-     * private
-     */
+    /* ****************************************************************************** *
+     *                              PRIVATE   METHODS                                 *
+     * ****************************************************************************** */
+
     async _ensureMin() {
-
-        //1.Check all returned sessions and remove those that do not pass
-        /** @type {Session[]} */
-        let deadSessions = [];
-        //drain returned_sessions into being worked on
-        /** @type {Session[]} */
-        let beingWorkedOnSessions = [];
-        beingWorkedOnSessions.push(...this.returnedSessions.splice(0, this.returnedSessions.length));
-        //sort into dead or leave those that pass the check
-        await Promise.all(beingWorkedOnSessions.map(async(s, i) => {
-            if (!(await this.check(s))) {
-                deadSessions.push(...beingWorkedOnSessions.splice(i, 1));
-            }
-        }));
-        //schedule deletion of unfit sessions
-        let killingPromise = this.server.kill(deadSessions);
-        //2. recycle checked sessions
-        this.sessions.push(...beingWorkedOnSessions);
-
+        await this._recycle();
         //ensure mininum
         let neededCount = this.min > this.sessions.length ? this.min - this.sessions.length : 0;
         let existing = this.sessions.length + this.returnedSessions.length + this._onLoanCount;
@@ -140,9 +143,31 @@ class SessionPool {
                     }
                 }));
         }
-        return Promise.all(promises).finally(
-            () => { this.__ensuringMin = false; }
-        );
+        return Promise.all(promises).finally(() => {
+            this.__ensuringMin = false;
+            this.emit(EVENTS.refreshed);
+        });
+    }
+
+    async _recycle() {
+        /** @type {Session[]} */
+        let deadSessions = [];
+        /** @type {Session[]} */
+        let beingWorkedOnSessions = [];
+
+        //1.drain returned_sessions into being worked on
+        beingWorkedOnSessions.push(...this.returnedSessions.splice(0, this.returnedSessions.length));
+
+        //2.sort into dead or leave those that pass the check
+        await Promise.all(beingWorkedOnSessions.map(async(s, i) => {
+            if (!(await this.check(s))) {
+                deadSessions.push(...beingWorkedOnSessions.splice(i, 1));
+            }
+        }));
+
+        //3.kill and discard dead sessions, recycle checked sessions
+        this.sessions.push(...beingWorkedOnSessions);
+        return this.server.kill(deadSessions);
     }
 }
 

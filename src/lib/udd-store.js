@@ -21,8 +21,6 @@ class UddStore {
         this.reference = reference;
     }
 
-    //TODO : METHODS : list and create one from reference
-
     /**
      * TODO test it (not too much slashes etc)
      * 

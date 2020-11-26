@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+      "allowJs": true,
+      "target": "es2017",
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true,
+      "sourceMap": false,
+      "outDir": "./dist/",
+      "module": "CommonJS",
+      "declaration": true,
+    },
+    "include": ["src"],
+  }

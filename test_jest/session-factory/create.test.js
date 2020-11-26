@@ -3,7 +3,7 @@ const SessionFactory = require("../../lib/session-factory");
 const UddStore = require("../../lib/udd-store");
 
 describe("Session factory", () => {
-    test("create() method returns a well customized version", async(done) => {
+    it("create() method returns a well customized version", async() => {
         let server = new SeleniumServer(
             '/Users/apple/dev/projects/scalping2/res/selenium-server-standalone-3.141.59.jar',
             '/Users/apple/dev/projects/scalping2/res/chromedriver_86.0.4240.22',
@@ -31,6 +31,7 @@ describe("Session factory", () => {
 
 
         await s.driver().quit();
-        done();
+
+        return;
     }, 5 * 60 * 1000);
 });

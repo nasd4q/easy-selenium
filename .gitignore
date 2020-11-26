@@ -1,1 +1,5 @@
 node_modules/
+dist/
+test/_resources/
+coverage/
+.nyc_output/

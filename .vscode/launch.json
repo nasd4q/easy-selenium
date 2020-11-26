@@ -1,0 +1,128 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "node TS file",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${file}",
+            "cwd": "${workspaceRoot}",
+            "internalConsoleOptions": "openOnSessionStart",
+            "env": {
+                "NODE_ENV" : "test",
+            }
+        },
+        {
+            "name": "Mocha JS File",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npx",
+            "program": "mocha",
+            "args": [
+                "--timeout",
+                "0",
+                "${relativeFile}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            //"sourceMaps": true,
+            "env": {
+            }
+        },
+        {
+            "name": "Mocha JS Selection",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npx",
+            "program": "mocha",
+            "args": [
+                "--timeout",
+                "0",
+                "${relativeFile}",
+                "-f",
+                "'${selectedText}'"
+            ],
+            "cwd": "${workspaceFolder}",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            //"sourceMaps": true,
+            "env": {
+            }
+        },
+        {
+            "name": "Mocha TS Selection",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npx",
+            "program": "mocha",
+            "args": [
+                "--timeout",
+                "0",
+                "-r",
+                "ts-node/register",
+                "${relativeFile}",
+                "-f",
+                "'${selectedText}'"
+            ],
+            "cwd": "${workspaceFolder}",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            //"sourceMaps": true,
+            "env": {
+            }
+        },
+        {
+            "name": "Mocha TS File",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npx",
+            "program": "mocha",
+            "args": [
+                "--timeout",
+                "0",
+                "-r",
+                "ts-node/register",
+                "${relativeFile}",
+            ],
+            "cwd": "${workspaceFolder}",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "sourceMaps": true,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+              ],
+            "env": {
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "node current file",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${file}",
+            "cwd": "${workspaceRoot}",
+            "internalConsoleOptions": "openOnSessionStart",
+            "env": {
+                "NODE_ENV" : "test",
+            }
+        }
+    ]
+}

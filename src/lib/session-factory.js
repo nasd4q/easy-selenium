@@ -22,9 +22,11 @@ class SessionFactory {
         var chromeOptions = {
             'args': [
                 '--user-data-dir=' + udd + '/',
-                "--auto-open-console-for-tabs=" + udd + '/'
+                "--auto-open-console-for-tabs=" + udd + '/',
+                //'--headless', '--disable-gpu',
             ],
-            'w3c': false
+            'w3c': false,
+
         };
         chromeCapabilities.set('chromeOptions', chromeOptions);
         chromeCapabilities.set('browserName', 'chrome');
@@ -37,11 +39,26 @@ class SessionFactory {
             .build();
 
         let s = new Session((await driver.getSession()).getId(), udd, () => driver);
+        let customized;
+        try {
+            customized = this.customize(s);
+        } catch (err) {
+            console.log(err);
+        }
 
+        return customized;
+    }
+
+    /**
+     * 
+     * @params {Session} session
+     * @returns {Promise<Session>}  
+     */
+    customize(session) {
         if (this._customize) {
-            return this._customize(s);
+            return this._customize(session);
         } else {
-            return s;
+            return Promise.resolve(session);
         }
     }
 }

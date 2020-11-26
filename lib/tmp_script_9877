@@ -1,4 +1,0 @@
-#!/bin/bash
-
-java -Dwebdriver.gecko.driver=/Users/apple/dev/projects/scalping2/res/geckodriver-v0.27.0 -Dwebdriver.chrome.driver=/Users/apple/dev/projects/scalping2/res/chromedriver_86.0.4240.22 -jar /Users/apple/dev/projects/scalping2/res/selenium-server-standalone-3.141.59.jar -port 9877 -sessionTimeout 5782349 &
-echo "$!" > /Users/apple/dev/projects/scalping2/libs/easy-selenium/lib/tmp_process_id_9877
