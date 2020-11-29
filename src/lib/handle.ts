@@ -1,11 +1,14 @@
-const { By } = require("selenium-webdriver");
+import { By } from "selenium-webdriver";
 
 /**
  * Easily find an element or get selenium locator from cssSelector or xpath
  */
-class Handle {
+export class Handle {
+    cssSelector: string;
+    xpath: string;
+    
     /** **private**, use static method from________ */
-    constructor(cssSelector, xpath) {
+    private constructor(cssSelector: string, xpath: string) {
         if (cssSelector) {
             this.cssSelector = cssSelector;
         }
@@ -18,10 +21,8 @@ class Handle {
      * Returns the html element matching, if any. 
      * 
      * Searches from the 'document' element and returns the first match.
-     * 
-     * @returns {(Node|Element|HTMLElement)}
      */
-    getElement() {
+    getElement(): Node|Element|HTMLElement {
         if (this.cssSelector) {
             return document.querySelector(this.cssSelector);
         } else if (this.xpath) {
@@ -32,7 +33,7 @@ class Handle {
         }
     }
 
-    getSeleniumLocator() {
+    getSeleniumLocator(): By {
         if (this.cssSelector) {
             return By.css(this.cssSelector);
         } else if (this.xpath) {
@@ -46,7 +47,7 @@ class Handle {
      * 
      * @param {String} cssSelector 
      */
-    static fromCssSelector(cssSelector) {
+    static fromCssSelector(cssSelector: string): Handle {
         return new Handle(cssSelector, null);
     }
 
@@ -54,9 +55,8 @@ class Handle {
      * 
      * @param {String} xpath 
      */
-    static fromXpath(xpath) {
+    static fromXpath(xpath: string): Handle {
         return new Handle(null, xpath);
     }
 }
 
-module.exports = Handle;
