@@ -31,10 +31,10 @@ class SeleniumServer {
     }
 
     /**
-     * Spawns a new java process to set up a selenium server. 
-     * 
+     * Spawns a new java process to set up a selenium server.   
      * (Except if some selenium server is already alive at `this.port`)
      * 
+     * @param session_timeout in seconds. Defaults to 5782349 (~ 70 days)
      * @returns {Promise<boolean>} whether succesful or not
      */
     async start(jar, chromedriver, geckodriver, session_timeout) {

@@ -1,8 +1,9 @@
-const SeleniumServer = require("./selenium-server");
-const Session = require("./session");
-const SessionFactory = require("./session-factory");
-const UddStore = require("./udd-store");
-const { EventEmitter } = require('events');
+import { EventEmitter } from "events";
+import SeleniumServer from "./selenium-server";
+import Session from "./session";
+import SessionFactory from "./session-factory";
+import UddStore from "./udd-store";
+
 
 const EVENTS = {
     refreshed: "Pool just refreshed"
@@ -11,7 +12,23 @@ const EVENTS = {
 /**
  * Manages sessions associated with a SeleniuServer and a UddStorage.
  */
-class SessionPool extends EventEmitter {
+export class SessionPool {
+    private server: SeleniumServer;
+    private store: UddStore;
+    private factory: SessionFactory;
+    private min: number;
+    private max: number;
+    /** Asserts if a session is deemed acceptable and 
+     * can be made available or not */
+    private check: (s: Session) => Promise<boolean>;
+    /** Checked sessions only !*/
+    private sessions: Session[] = [];
+    private returnedSessions: Session[] = [];
+    private _onLoanCount: number = 0;
+    private __ensuringMin: boolean = false;
+    private events: EventEmitter = new EventEmitter();
+
+
     /**
      * Just assigns construction params to instance fields.
      * 
@@ -23,22 +40,14 @@ class SessionPool extends EventEmitter {
      * @param {(session: Session) => Promise<boolean> } check a function that asserts if a session is deemed 
      * acceptable and can be made available or not
      */
-    constructor(server, store, factory, min, max, check) {
-        super();
+    public constructor(server: SeleniumServer, store: UddStore, factory: SessionFactory,
+        min: number, max: number, check: (s: Session) => Promise<boolean>) {
         this.server = server;
         this.store = store;
         this.factory = factory;
         this.min = min;
         this.max = max;
-        /** @type {(Session) => Promise<boolean> } asserts if a session is deemed acceptable and 
-         * can be made available or not */
         this.check = check;
-        /** @type {Session[]} only checked sessions*/
-        this.sessions = [];
-        /** @type {Session[]} */
-        this.returnedSessions = [];
-        this._onLoanCount = 0;
-        this.__ensuringMin = false;
     }
 
     /**
@@ -48,18 +57,20 @@ class SessionPool extends EventEmitter {
      * customizes them, then checks them, and kills those that do not check, 
      * collect those that check. Finally, calls `this._ensureMin`.
      */
-    async init() {
-        await this.server.start().then(ready => {
-            if (!ready) {
-                throw new Error("Couldn't start the selenium server.");
-            }
-        });
+    public async init(jar: string, chromedriver: string, geckodriver: string,
+        sessionTimeout: number) {
+        await this.server.start(jar, chromedriver, geckodriver, sessionTimeout)
+            .then(ready => {
+                if (!ready) {
+                    throw new Error("Couldn't start the selenium server.");
+                }
+            });
         //TODO delete this reuse of existing session if not for testing...
-        await this.server.list().then(sessions => Promise.all(sessions.map(async(s) => {
+        await this.server.list().then(sessions => Promise.all(sessions.map(async (s) => {
             let checked = false;
             try {
                 s = await this.factory.customize(s);
-                checked = await this.check(s)
+                checked = await this.check(s);
             } catch (err) {
                 checked = false;
             }
@@ -74,11 +85,15 @@ class SessionPool extends EventEmitter {
         return p;
     }
 
+    public async terminate() {
+        await this.server.stop();
+    }
+
     /**
      * Returns a checked and ready Session if one available, else returns undefined.
      * @returns { Session }
      */
-    getOne() {
+    public getOne() {
         let s = this.sessions.shift();
         if (s) {
             if (!this.__ensuringMin) {
@@ -90,7 +105,7 @@ class SessionPool extends EventEmitter {
         return s;
     }
 
-    giveBack(session) {
+    public giveBack(session: Session) {
         this.returnedSessions.push(session);
         this._onLoanCount--;
         if (!this.__ensuringMin) {
@@ -103,11 +118,13 @@ class SessionPool extends EventEmitter {
      *                              PRIVATE   METHODS                                 *
      * ****************************************************************************** */
 
-    async _ensureMin() {
+    private async _ensureMin() {
         await this._recycle();
         //ensure mininum
-        let neededCount = this.min > this.sessions.length ? this.min - this.sessions.length : 0;
-        let existing = this.sessions.length + this.returnedSessions.length + this._onLoanCount;
+        let neededCount = this.min > this.sessions.length ?
+            this.min - this.sessions.length : 0;
+        let existing = this.sessions.length + this.returnedSessions.length +
+            this._onLoanCount;
         let makeCount = 0
         for (; makeCount + existing < this.max && makeCount < neededCount; makeCount++);
 
@@ -121,7 +138,7 @@ class SessionPool extends EventEmitter {
                 UddStore._deleteTrailingSlash(ses.udd) !==
                 UddStore._deleteTrailingSlash(folder))
         );
-        let promises = found.map(async(folder) => {
+        let promises = found.map(async (folder) => {
             if (makeCount-- > 0) {
                 let s = await this.factory.create(this.server.url, folder);
                 if (await this.check(s)) {
@@ -134,32 +151,33 @@ class SessionPool extends EventEmitter {
         while (makeCount-- > 0) {
             promises.push(
                 this.store.create()
-                .then(async(folder) => {
-                    let s = await this.factory.create(this.server.url, folder);
-                    if (await this.check(s)) {
-                        this.sessions.push(s)
-                    } else {
-                        throw new Error("Factory's output session not checking!");
-                    }
-                }));
+                    .then(async (folder) => {
+                        let s = await this.factory.create(this.server.url, folder);
+                        if (await this.check(s)) {
+                            this.sessions.push(s)
+                        } else {
+                            throw new Error("Factory's output session not checking!");
+                        }
+                    }));
         }
         return Promise.all(promises).finally(() => {
             this.__ensuringMin = false;
-            this.emit(EVENTS.refreshed);
+            this.events.emit(EVENTS.refreshed);
         });
     }
 
-    async _recycle() {
+    private async _recycle() {
         /** @type {Session[]} */
         let deadSessions = [];
         /** @type {Session[]} */
         let beingWorkedOnSessions = [];
 
         //1.drain returned_sessions into being worked on
-        beingWorkedOnSessions.push(...this.returnedSessions.splice(0, this.returnedSessions.length));
+        beingWorkedOnSessions.push(...this.returnedSessions.splice(0, 
+            this.returnedSessions.length));
 
         //2.sort into dead or leave those that pass the check
-        await Promise.all(beingWorkedOnSessions.map(async(s, i) => {
+        await Promise.all(beingWorkedOnSessions.map(async (s, i) => {
             if (!(await this.check(s))) {
                 deadSessions.push(...beingWorkedOnSessions.splice(i, 1));
             }
@@ -170,6 +188,3 @@ class SessionPool extends EventEmitter {
         return this.server.kill(deadSessions);
     }
 }
-
-
-module.exports = SessionPool;
