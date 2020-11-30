@@ -1,6 +1,6 @@
 const { WebDriver, WebElement } = require('selenium-webdriver');
-const Handle = require("./handle");
 const getModuleLoadingScript = require('browser-loader');
+const { Handle } = require("./handle");
 
 class EnhancedDriver extends WebDriver {
 

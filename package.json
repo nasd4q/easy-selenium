@@ -4,6 +4,7 @@
     "description": "facilitates using selenium framework with regards to certain specific tasks",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "files": ["dist/"],
     "scripts": {
         "test": "rm -rf dist/ && mocha test/**/*.test.ts",
         "test-dist": "npm run compile && mocha test/**/*.test.ts",
@@ -16,7 +17,7 @@
     "license": "ISC",
     "dependencies": {
         "@types/selenium-webdriver": "^4.0.10",
-        "browser-loader": "file:../browser-loader",
+        "browser-loader": "git+ssh://git@nasd4q.github.com:nasd4q/browser-loader.git#releases",
         "copy-dir": "^1.3.0",
         "make-dir": "^3.1.0",
         "node-fetch": "^2.6.1",
