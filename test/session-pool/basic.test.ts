@@ -1,15 +1,11 @@
-import * as path from 'path';
+import { SELENIUM_3, CHROMEDRIVER, GECKODRIVER, REF_UDDS} from '00_selenium-resources';
+
 import { SeleniumServer, SessionFactory, SessionPool, UddStore } from "../..";
 
-const root = path.dirname(path.dirname(__dirname));
-const scalping2 = path.dirname(path.dirname(root));
+const JAR =  SELENIUM_3;
 
-const JAR =  path.dirname(__dirname) + '/_resources/selenium-server-standalone-3.141.59.jar';
-const CHROMEDRIVER = path.dirname(__dirname) + '/_resources/chromedriver_86.0.4240.22';
-const GECKODRIVER = path.dirname(__dirname) + '/_test/resources/geckodriver-v0.27.0';
-
-const TEST_DATA_UDDS_DIR =  scalping2 + '/test-data/ig-sessions';
-const REF_UDD = scalping2 + '/res/reference-ig-sessions/user-data-dirs/one';
+const TEST_DATA_UDDS_DIR =  __dirname + '/_temp/test-udds';
+const REF_UDD = REF_UDDS.one;
  
 describe("SessionPool", () => {
     it("initialize(), getOne(), giveBack(), terminate() - all seems fine", async() => {

@@ -1,13 +1,10 @@
 import * as child_process from 'child_process';
 import { expect } from "chai";
-import * as path from 'path';
+import { SELENIUM_3, CHROMEDRIVER, GECKODRIVER} from '00_selenium-resources';
 
 import { SeleniumServer } from "../..";
 
-
-const JAR =  path.dirname(__dirname) + '/_resources/selenium-server-standalone-3.141.59.jar';
-const CHROMEDRIVER = path.dirname(__dirname) + '/_resources/chromedriver_86.0.4240.22';
-const GECKODRIVER = path.dirname(__dirname) + '/_test/resources/geckodriver-v0.27.0';
+const JAR =  SELENIUM_3;
 
 describe("selenium server", function() {
     it("isAlive() --> no,  then start(), isAlive() --> yes, then stop(), isAlive() --> no", async ()=>{

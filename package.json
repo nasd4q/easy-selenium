@@ -4,7 +4,9 @@
     "description": "facilitates using selenium framework with regards to certain specific tasks",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
-    "files": ["dist/"],
+    "files": [
+        "dist/"
+    ],
     "scripts": {
         "test": "rm -rf dist/ && mocha test/**/*.test.ts",
         "test-dist": "npm run compile && mocha test/**/*.test.ts",
@@ -24,6 +26,7 @@
         "selenium-webdriver": "3.6.0"
     },
     "devDependencies": {
+        "00_selenium-resources": "file:../00_selenium-resources",
         "@types/chai": "^4.2.14",
         "@types/mocha": "^8.0.4",
         "@types/node": "^14.14.10",

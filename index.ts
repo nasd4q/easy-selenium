@@ -9,4 +9,4 @@
 
 
 //uncomment for use in testing
-//export * from "./src/index";
+export * from "./src/index";
