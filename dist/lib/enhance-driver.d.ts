@@ -21,7 +21,7 @@ declare class EnhancedDriver extends WebDriver {
      *
      * @returns {Promise<WebElement>}
      */
-    waitAndFind(handle: typeof Handle, timeout: number, trials: number, pretimeout?: number): Promise<WebElement>;
+    waitAndFind(handle: Handle, timeout: number, trials: number, pretimeout?: number): Promise<WebElement>;
     /**
      * Tries repeatedly to find element by text using `this.executeScript()`,
      * and `document.evaluate()` inside browser to match any element
@@ -99,5 +99,5 @@ declare class EnhancedDriver extends WebDriver {
     executeScriptWithModule(script: Function | string, args: any, path: string, name: string): Promise<any>;
 }
 import { WebDriver } from "selenium-webdriver";
-import Handle = require("./handle");
+import { Handle } from "./handle";
 import { WebElement } from "selenium-webdriver";

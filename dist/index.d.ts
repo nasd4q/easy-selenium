@@ -1,6 +1,6 @@
 import { SessionPool } from "./lib/session-pool";
+import { Handle } from "./lib/handle";
 import EnhancedDriver = require("./lib/enhance-driver");
-import Handle = require("./lib/handle");
 import Session = require("./lib/session");
 import SessionFactory = require("./lib/session-factory");
 import UddStore = require("./lib/udd-store");
