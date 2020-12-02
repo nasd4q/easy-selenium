@@ -1,22 +1,20 @@
-export = SessionFactory;
-declare class SessionFactory {
+import { Session } from './session';
+/**
+ * Exposes instance method `create(...)` to generate new selenium browsing sessions
+ */
+export declare class SessionFactory {
+    private _customize;
+    headless: boolean;
     /**
-     * @param { (session : Session) => Promise<Session> } [customize] prepare the session for specific tasks
+     * @param customize Prepares the session for specific tasks. Will be called
+     * right before returning freshly created session by `this.create(...)` method
+     * @param headless Defaults to `false`
      */
-    constructor(customize?: (session: Session) => Promise<Session>);
-    _customize: (session: Session) => Promise<Session>;
+    constructor(customize: (session: Session) => Promise<Session>, headless?: boolean);
     /**
-     *
-     * @param {string} udd path to user data dir (absolute, no trailing slash)
-     * @param {string} url url of selenium server
-     * @returns {Promise<Session>}
+     * @param udd path to user data dir (absolute, no trailing slash)
+     * @param url url of selenium server
      */
     create(url: string, udd: string): Promise<Session>;
-    /**
-     *
-     * @params {Session} session
-     * @returns {Promise<Session>}
-     */
-    customize(session: any): Promise<Session>;
+    customize(session: Session): Promise<Session>;
 }
-import Session = require("./session");

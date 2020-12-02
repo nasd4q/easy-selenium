@@ -1,7 +1,7 @@
-import SeleniumServer from "./selenium-server";
-import Session from "./session";
-import SessionFactory from "./session-factory";
-import UddStore from "./udd-store";
+import { SeleniumServer } from "./selenium-server";
+import { Session } from "./session";
+import { SessionFactory } from "./session-factory";
+import { UddStore } from "./udd-store";
 /**
  * Manages sessions associated with a SeleniuServer and a UddStorage.
  */

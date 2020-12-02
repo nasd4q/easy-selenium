@@ -1,11 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SessionPool = void 0;
 const events_1 = require("events");
-const udd_store_1 = __importDefault(require("./udd-store"));
+const udd_store_1 = require("./udd-store");
 const EVENTS = {
     refreshed: "Pool just refreshed"
 };
@@ -116,8 +113,8 @@ class SessionPool {
         let alivesP = this.server.list();
         let uddsP = this.store.list();
         let alives = await alivesP;
-        let found = (await uddsP).filter(folder => alives.every(ses => udd_store_1.default._deleteTrailingSlash(ses.udd) !==
-            udd_store_1.default._deleteTrailingSlash(folder)));
+        let found = (await uddsP).filter(folder => alives.every(ses => udd_store_1.UddStore._deleteTrailingSlash(ses.udd) !==
+            udd_store_1.UddStore._deleteTrailingSlash(folder)));
         let promises = found.map(async (folder) => {
             if (makeCount-- > 0) {
                 let s = await this.factory.create(this.server.url, folder);

@@ -1,10 +1,31 @@
-const fetch = require('node-fetch');
-const child_process = require('child_process');
-const fs = require('fs');
-const { WebDriver } = require('selenium-webdriver');
-const { Executor, HttpClient } = require('selenium-webdriver/http');
-const Session = require('./session');
-const UddStore = require('./udd-store');
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SeleniumServer = void 0;
+const fetch = __importStar(require("node-fetch"));
+const child_process = __importStar(require("child_process"));
+const selenium_webdriver_1 = require("selenium-webdriver");
+const http_1 = require("selenium-webdriver/http");
+const session_1 = require("./session");
+const udd_store_1 = require("./udd-store");
 /**
  * Interfaces with a selenium standalone server version 3.141.59 for basic operations
  * including starting the server, listing sessions, and killing them
@@ -12,7 +33,7 @@ const UddStore = require('./udd-store');
 class SeleniumServer {
     /**
      * Stores port into `this.port` and creates convenience field `this.url`
-     * @param {number} [port] defaults to 4444
+     * @param {number} [port] Defaults to 4444
      */
     constructor(port) {
         this.port = port ? port : 4444;
@@ -22,7 +43,7 @@ class SeleniumServer {
      * @returns {Promise<boolean>} whether a selenium server at this.port responds or not
      */
     isAlive() {
-        return fetch(this.url + '/status')
+        return fetch.default(this.url + '/status')
             .then(res => res.json())
             .then(json => json.status === 0 && json.value.ready && json.value.message === 'Server is running')
             .catch(() => false);
@@ -78,7 +99,6 @@ class SeleniumServer {
     /**
      * Quits every running session, and shuts down the server __if this SeleniumServer instance
      * previously effectively started one__
-     *
      */
     async stop() {
         await this.killAll();
@@ -94,7 +114,7 @@ class SeleniumServer {
      * @param {number} port
      * @returns {Promise<boolean>} whether has killed anything or not
      */
-    //this method might bug if multiple java processes found listening on same port ?
+    //TODO? - this method might bug if multiple java processes found listening on same port ?
     static _stopJavaProcessesOccupyingPort(port) {
         //command : that gets tcp connections, who 'LISTEN', on port `port` ($4 corresponds PORT), where ps -o comm= -p du pid as procname, where procname contient java, affiche $2, aka $9 ----> pid
         let command = `netstat -anvp tcp | grep LISTEN | awk '$4 ~ /\\.${port}/' | awk '{"ps -o comm= -p " $9 | getline procname; print $4 " " $9 " " procname}'| awk  '$3 ~ /java/' | awk '{print $2}'`;
@@ -141,10 +161,10 @@ class SeleniumServer {
      */
     async list() {
         /** @type {Session[]} */
-        let sessions = await fetch(this.url + '/sessions')
+        let sessions = await fetch.default(this.url + '/sessions')
             .then(res => res.json())
             .then(res => res.value)
-            .then(res => res.map(el => new Session(el.id, UddStore._deleteTrailingSlash(el.capabilities.chrome.userDataDir), () => new WebDriver(el.id, new Executor(new HttpClient(this.url))))));
+            .then(res => res.map(el => new session_1.Session(el.id, udd_store_1.UddStore._deleteTrailingSlash(el.capabilities.chrome.userDataDir), () => new selenium_webdriver_1.WebDriver(el.id, new http_1.Executor(new http_1.HttpClient(this.url))))));
         return sessions;
     }
     /**
@@ -152,7 +172,7 @@ class SeleniumServer {
      *
      * Will throw FetchError inside returned promise if selenium server is not alive.
      *
-     * @returns {Promise<void>} a promise that resolves once its done
+     * @returns {Promise<void[]>} a promise that resolves once its done
      * @param {Session[]} sessions
      */
     kill(sessions) {
@@ -164,12 +184,11 @@ class SeleniumServer {
      * List sessions alive and kills them all.
      *
      * Will throw FetchError inside returned promise if selenium server is not alive.
-     * @returns {Promise<void>} a promise that resolves once its done
+     * @returns {Promise<void[]>} a promise that resolves once its done
      */
     async killAll() {
         return this.kill(await this.list());
     }
-    //TODO method for shutting down the server
     // Private
     /**
      * @param {*} jar path to jar
@@ -201,4 +220,4 @@ class SeleniumServer {
         return { command, args };
     }
 }
-module.exports = SeleniumServer;
+exports.SeleniumServer = SeleniumServer;

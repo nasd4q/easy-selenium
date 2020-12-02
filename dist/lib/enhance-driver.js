@@ -1,7 +1,18 @@
-const { WebDriver, WebElement } = require('selenium-webdriver');
-const getModuleLoadingScript = require('browser-loader');
-const { Handle } = require("./handle");
-class EnhancedDriver extends WebDriver {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EnhancedDriver = void 0;
+const selenium_webdriver_1 = require("selenium-webdriver");
+const browser_loader_1 = require("browser-loader");
+/**
+ * Enhances selenium's Webdriver class : provides additional methods with
+ * respect to certain particular tasks such as :
+ * + trying repeatedly to wait and click on an element (`waitAndClick(...)`)
+ * + trying repeatedly a task (`repeatWhile(...)`)
+ * + loading a browserified js module for in-browser use (`loadModule(...)`)
+ * + opening a new window (`newWindow()`)
+ * + etc.
+  */
+class EnhancedDriver extends selenium_webdriver_1.WebDriver {
     /**
      * @param {WebDriver} driver the WebDriver instance to enhance
      *
@@ -26,7 +37,6 @@ class EnhancedDriver extends WebDriver {
      * @returns {Promise<WebElement>}
      */
     async waitAndFind(handle, timeout, trials, pretimeout) {
-        /** @type {WebElement[]} */
         if (typeof pretimeout === 'number' && pretimeout > 0) {
             await new Promise(r => setTimeout(r, pretimeout));
         }
@@ -57,7 +67,6 @@ class EnhancedDriver extends WebDriver {
      * @returns {Promise<WebElement>}
      */
     async waitAndFindByText(text, timeout, trials) {
-        /** @type {WebElement[]} */
         let found;
         do {
             await new Promise(r => setTimeout(r, timeout));
@@ -138,7 +147,7 @@ class EnhancedDriver extends WebDriver {
         if (await this.executeScript(function (name) {
             return !window[name];
         }, name)) {
-            let s = await getModuleLoadingScript(path, name, ["selenium-webdriver"]);
+            let s = await browser_loader_1.getModuleLoadingScript(path, name, ["selenium-webdriver"]);
             await this.executeScript(s + '\nconsole.log("Just loaded ' + name + '");');
         }
     }
@@ -178,9 +187,9 @@ class EnhancedDriver extends WebDriver {
      * @param {string} path
      * @param {string} name
      */
-    async executeScriptWithModule(script, args, path, name) {
+    async executeScriptWithModule(script, args, path, name, string) {
         await this.loadModule(path, name);
         return this.executeScript(script, args);
     }
 }
-module.exports = EnhancedDriver;
+exports.EnhancedDriver = EnhancedDriver;

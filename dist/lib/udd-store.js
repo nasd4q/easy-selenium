@@ -1,7 +1,19 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UddStore = void 0;
 const fs = require('fs');
 const makeDir = require("make-dir");
 const copydir = require('copy-dir');
 const PREFIX = "udd_";
+/**
+ * Interfaces with a file-system (module 'fs') folder for storing selenium browsing
+ * sessions "user-data-dirs" and exposes convenience methods such as :
+ *
+ * + `list()`, which allows to get a list of fs-existing udds,
+ * + `create(...)`, which allows to duplicate the 'reference udd'
+ * (ie the folder at path `reference`), e.g. for launching a new browsing
+ * session from it
+ */
 class UddStore {
     /**
      *
@@ -10,11 +22,6 @@ class UddStore {
      *
      */
     constructor(path, reference) {
-        /**
-         * the absolute path to the directory storing sessions data
-         * @type {String}
-         * @public
-         */
         this.path = path;
         this.reference = reference;
     }
@@ -24,7 +31,7 @@ class UddStore {
      * Looks up this.path for udds : subfolders starting with `PREFIX`.
      * If found some, resolves to an array containing folder full paths.
      * Else, resolves to an empty array.
-     * @returns {Promise<String[]>}
+     * @returns {Promise<string[]>}
      */
     async list() {
         /** @type {string[]} */
@@ -32,14 +39,14 @@ class UddStore {
         await new Promise(res => {
             fs.readdir(this.path, { withFileTypes: true }, (err, dirents) => {
                 if (err) {
-                    res();
+                    res(undefined);
                     return;
                 }
                 list.push(...dirents
                     .filter(f => f.isDirectory())
                     .filter(f => f.name.startsWith(PREFIX))
                     .map(f => this.path + '/' + f.name));
-                res();
+                res(undefined);
             });
         });
         return list;
@@ -79,7 +86,7 @@ class UddStore {
             if (err) {
                 throw err;
             }
-            res();
+            res(null);
         }));
         return udd;
     }
@@ -93,4 +100,4 @@ class UddStore {
         return path;
     }
 }
-module.exports = UddStore;
+exports.UddStore = UddStore;

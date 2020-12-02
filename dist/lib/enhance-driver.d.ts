@@ -1,5 +1,15 @@
-export = EnhancedDriver;
-declare class EnhancedDriver extends WebDriver {
+import { WebDriver, WebElement } from 'selenium-webdriver';
+import { Handle } from './handle';
+/**
+ * Enhances selenium's Webdriver class : provides additional methods with
+ * respect to certain particular tasks such as :
+ * + trying repeatedly to wait and click on an element (`waitAndClick(...)`)
+ * + trying repeatedly a task (`repeatWhile(...)`)
+ * + loading a browserified js module for in-browser use (`loadModule(...)`)
+ * + opening a new window (`newWindow()`)
+ * + etc.
+  */
+export declare class EnhancedDriver extends WebDriver {
     /**
      * @param {WebDriver} driver the WebDriver instance to enhance
      *
@@ -21,7 +31,7 @@ declare class EnhancedDriver extends WebDriver {
      *
      * @returns {Promise<WebElement>}
      */
-    waitAndFind(handle: Handle, timeout: number, trials: number, pretimeout?: number): Promise<WebElement>;
+    waitAndFind(handle: Handle, timeout: number, trials: number, pretimeout: number): Promise<WebElement>;
     /**
      * Tries repeatedly to find element by text using `this.executeScript()`,
      * and `document.evaluate()` inside browser to match any element
@@ -36,7 +46,7 @@ declare class EnhancedDriver extends WebDriver {
      *
      * @returns {Promise<WebElement>}
      */
-    waitAndFindByText(text: any, timeout: number, trials: number): Promise<WebElement>;
+    waitAndFindByText(text: string, timeout: number, trials: number): Promise<WebElement>;
     /**
      * Tries `element.click()` repeatedly while error are thrown. If no success
      * after `trials` attempts, then rethrow last thrown error.
@@ -47,7 +57,7 @@ declare class EnhancedDriver extends WebDriver {
      *
      * Note : 0 value for timeout or trials should be changed to default values.
      */
-    waitAndClick(element: WebElement, timeout?: number, trials?: number): Promise<void>;
+    waitAndClick(element: WebElement, timeout: number, trials: number): Promise<void>;
     /**
      * Evaluates condition, then attempts task, until condition resolves to
      * `true`. It no success after `trials` attempts, throws an error.
@@ -68,7 +78,7 @@ declare class EnhancedDriver extends WebDriver {
      *
      * @param {string} path
      */
-    loadModule(path: string, name: any): Promise<void>;
+    loadModule(path: string, name: string): Promise<void>;
     /**
      * Opens a new browser window to current url. Does not switch to it.
      *
@@ -96,8 +106,5 @@ declare class EnhancedDriver extends WebDriver {
      * @param {string} path
      * @param {string} name
      */
-    executeScriptWithModule(script: Function | string, args: any, path: string, name: string): Promise<any>;
+    executeScriptWithModule(script: Function | string, args: any, path: string, name: any, string: any): Promise<unknown>;
 }
-import { WebDriver } from "selenium-webdriver";
-import { Handle } from "./handle";
-import { WebElement } from "selenium-webdriver";
