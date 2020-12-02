@@ -1,33 +1,44 @@
-const webdriver = require("selenium-webdriver");
-const Session = require("./session");
+import * as webdriver from 'selenium-webdriver';
+import { Session } from './session';
 
-class SessionFactory {
+/**
+ * Exposes instance method `create(...)` to generate new selenium browsing sessions
+ */
+export class SessionFactory {
+    private _customize: (session : Session) => Promise<Session>;
+    headless: boolean;
     /**
-     * @param { (session : Session) => Promise<Session> } [customize] prepare the session for specific tasks
+     * @param customize Prepares the session for specific tasks. Will be called
+     * right before returning freshly created session by `this.create(...)` method
+     * @param headless Defaults to `false`
      */
-    constructor(customize) {
+    constructor(customize: (session : Session) => Promise<Session>, headless?: boolean) {
             if (customize) {
                 this._customize = customize;
             }
+            if (headless === null || headless === undefined) {
+                headless = false;
+            } 
+            this.headless = headless
         }
         /**
-         * 
-         * @param {string} udd path to user data dir (absolute, no trailing slash)
-         * @param {string} url url of selenium server
-         * @returns {Promise<Session>}
+         * @param udd path to user data dir (absolute, no trailing slash)
+         * @param url url of selenium server
          */
-    async create(url, udd) {
+    public async create(url: string, udd: string): Promise<Session> {
         //Create capabilities and options obj
         var chromeCapabilities = webdriver.Capabilities.chrome();
         var chromeOptions = {
             'args': [
                 '--user-data-dir=' + udd + '/',
-                "--auto-open-console-for-tabs=" + udd + '/',
-                //'--headless', '--disable-gpu',
+                "--auto-open-console-for-tabs=" + udd + '/'
             ],
             'w3c': false,
 
         };
+        if (this.headless) {
+            chromeOptions.args.push(...['--headless', '--disable-gpu']);
+        }
         chromeCapabilities.set('chromeOptions', chromeOptions);
         chromeCapabilities.set('browserName', 'chrome');
 
@@ -45,16 +56,10 @@ class SessionFactory {
         } catch (err) {
             console.log(err);
         }
-
         return customized;
     }
 
-    /**
-     * 
-     * @params {Session} session
-     * @returns {Promise<Session>}  
-     */
-    customize(session) {
+    customize(session: Session): Promise<Session> {
         if (this._customize) {
             return this._customize(session);
         } else {
@@ -62,5 +67,3 @@ class SessionFactory {
         }
     }
 }
-
-module.exports = SessionFactory;

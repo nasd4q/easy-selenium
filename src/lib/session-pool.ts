@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
-import SeleniumServer from "./selenium-server";
-import Session from "./session";
-import SessionFactory from "./session-factory";
-import UddStore from "./udd-store";
+import { SeleniumServer } from "./selenium-server";
+import { Session } from "./session";
+import { SessionFactory } from "./session-factory";
+import { UddStore } from "./udd-store";
 
 
 const EVENTS = {

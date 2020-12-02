@@ -4,19 +4,26 @@ const copydir = require('copy-dir');
 
 const PREFIX = "udd_";
 
-class UddStore {
+/**
+ * Interfaces with a file-system (module 'fs') folder for storing selenium browsing 
+ * sessions "user-data-dirs" and exposes convenience methods such as :
+ * 
+ * + `list()`, which allows to get a list of fs-existing udds,  
+ * + `create(...)`, which allows to duplicate the 'reference udd' 
+ * (ie the folder at path `reference`), e.g. for launching a new browsing 
+ * session from it
+ */
+export class UddStore {
+    /**The absolute path to the directory storing sessions data  */
+    public path: string;
+    reference: string;
     /**
      * 
      * @param {String} path an absolute path to the directory storing sessions data, no trailing slash
      * @param {String} reference an absolute path to a reference udd, no trailing slash
      *
      */
-    constructor(path, reference) {
-        /**
-         * the absolute path to the directory storing sessions data 
-         * @type {String}
-         * @public
-         */
+    constructor(path:string, reference:string) {
         this.path = path;
         this.reference = reference;
     }
@@ -27,23 +34,23 @@ class UddStore {
      * Looks up this.path for udds : subfolders starting with `PREFIX`.
      * If found some, resolves to an array containing folder full paths.
      * Else, resolves to an empty array.
-     * @returns {Promise<String[]>}
+     * @returns {Promise<string[]>}
      */
-    async list() {
+    async list():Promise<string[]> {
         /** @type {string[]} */
         let list = [];
 
         await new Promise(res => {
             fs.readdir(this.path, { withFileTypes: true }, (err, dirents) => {
                 if (err) {
-                    res();
+                    res(undefined);
                     return;
                 }
                 list.push(...dirents
                     .filter(f => f.isDirectory())
                     .filter(f => f.name.startsWith(PREFIX))
                     .map(f => this.path + '/' + f.name));
-                res();
+                res(undefined);
             });
         });
 
@@ -54,7 +61,7 @@ class UddStore {
      * Creates a new udd from reference into `this.path` and returns full path to 
      * newly created udd
      */
-    async create() {
+    async create(): Promise<string> {
         let getNumber = function() {
             let number = Math.floor(Math.random() * 99 + 1);
             let numberS = (number < 10) ? '0' + number : '' + number;
@@ -90,7 +97,7 @@ class UddStore {
             if (err) {
                 throw err;
             }
-            res();
+            res(null);
         }));
         return udd;
     }
@@ -99,7 +106,7 @@ class UddStore {
     /**
      * @param {string} path 
      */
-    static _deleteTrailingSlash(path) {
+    static _deleteTrailingSlash(path: string): string {
         if (path.endsWith('/')) {
             path = path.slice(0, -1);
         }
@@ -107,5 +114,3 @@ class UddStore {
     }
 
 }
-
-module.exports = UddStore;

@@ -1,8 +1,17 @@
-const { WebDriver, WebElement } = require('selenium-webdriver');
-const getModuleLoadingScript = require('browser-loader');
-const { Handle } = require("./handle");
+import { WebDriver, WebElement } from 'selenium-webdriver';
+import { getModuleLoadingScript } from 'browser-loader';
+import { Handle } from './handle';
 
-class EnhancedDriver extends WebDriver {
+/**
+ * Enhances selenium's Webdriver class : provides additional methods with
+ * respect to certain particular tasks such as : 
+ * + trying repeatedly to wait and click on an element (`waitAndClick(...)`)
+ * + trying repeatedly a task (`repeatWhile(...)`)
+ * + loading a browserified js module for in-browser use (`loadModule(...)`)
+ * + opening a new window (`newWindow()`)
+ * + etc.
+  */
+export class EnhancedDriver extends WebDriver {
 
     /**
      * @param {WebDriver} driver the WebDriver instance to enhance
@@ -10,7 +19,7 @@ class EnhancedDriver extends WebDriver {
      * 
      * Note : Calls super, aka WebDriver's constructor.
      */
-    constructor(driver) {
+    constructor(driver: WebDriver) {
         super(driver.getSession(), driver.getExecutor());
     }
 
@@ -28,8 +37,8 @@ class EnhancedDriver extends WebDriver {
      * 
      * @returns {Promise<WebElement>}
      */
-    async waitAndFind(handle, timeout, trials, pretimeout) {
-        /** @type {WebElement[]} */
+    async waitAndFind(handle: Handle, timeout: number, trials: number,
+        pretimeout: number): Promise<WebElement> {
         if (typeof pretimeout === 'number' && pretimeout > 0) {
             await new Promise(r => setTimeout(r, pretimeout));
         }
@@ -62,9 +71,9 @@ class EnhancedDriver extends WebDriver {
      * 
      * @returns {Promise<WebElement>}
      */
-    async waitAndFindByText(text, timeout, trials) {
-        /** @type {WebElement[]} */
-        let found;
+    async waitAndFindByText(text: string, timeout: number, trials: number)
+        : Promise<WebElement> {
+        let found: WebElement;
         do {
             await new Promise(r => setTimeout(r, timeout))
             found = await this.executeScript(
@@ -100,7 +109,8 @@ class EnhancedDriver extends WebDriver {
      * 
      * Note : 0 value for timeout or trials should be changed to default values.
      */
-    async waitAndClick(element, timeout, trials) {
+    async waitAndClick(element: WebElement, timeout: number, trials: number)
+        : Promise<void> {
         let retry, lastErr;
         trials = trials || 5;
         timeout = timeout || 30;
@@ -131,7 +141,8 @@ class EnhancedDriver extends WebDriver {
      * 
      * @returns {Promise<void>} resolves in case of success
      */
-    async repeatWhile(task, condition, timeout, trials, pretimeout) {
+    async repeatWhile(task: ()=>Promise<any>, condition: ()=>Promise<boolean>, 
+    timeout: number, trials: number, pretimeout: number): Promise<void> {
         await new Promise(r => setTimeout(r, pretimeout));
         while (!(await condition()) && trials-- > 0) {
             await task();
@@ -151,10 +162,10 @@ class EnhancedDriver extends WebDriver {
      * 
      * @param {string} path 
      */
-    async loadModule(path, name) {
-        if (await this.executeScript(function(name) {
-                return !window[name];
-            }, name)) {
+    async loadModule(path: string, name: string): Promise<void> {
+        if (await this.executeScript(function (name) {
+            return !window[name];
+        }, name)) {
 
             let s = await getModuleLoadingScript(path, name, ["selenium-webdriver"]);
             await this.executeScript(s + '\nconsole.log("Just loaded ' + name + '");')
@@ -168,8 +179,8 @@ class EnhancedDriver extends WebDriver {
      * 
      * Note : uses an in-browser js script.
      */
-    newWindow() {
-        return this.executeScript(function() {
+    newWindow(): Promise<void> {
+        return this.executeScript(function () {
             window.open(document.URL, '_blank', 'location=yes,height=780,width=1280,scrollbars=yes,status=yes');
             return;
         });
@@ -178,14 +189,14 @@ class EnhancedDriver extends WebDriver {
     /**
      * @returns {Promise<void>}
      */
-    async switchToFirstWindow() {
+    async switchToFirstWindow(): Promise<void> {
         return this.switchTo().window(await this.getAllWindowHandles().then(ws => ws[0]));
     }
 
     /**
      * @returns {Promise<void>}
      */
-    async switchToLastWindow() {
+    async switchToLastWindow(): Promise<void> {
         return this.switchTo().window(await this.getAllWindowHandles().then(ws => ws[ws.length - 1]));
     }
 
@@ -200,10 +211,9 @@ class EnhancedDriver extends WebDriver {
      * @param {string} path 
      * @param {string} name 
      */
-    async executeScriptWithModule(script, args, path, name) {
+    async executeScriptWithModule(script: Function | string, 
+        args: any, path: string, name, string): Promise<unknown> {
         await this.loadModule(path, name);
         return this.executeScript(script, args);
     }
 }
-
-module.exports = EnhancedDriver;

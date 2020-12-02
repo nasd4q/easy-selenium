@@ -1,21 +1,23 @@
-const fetch = require('node-fetch');
-const child_process = require('child_process');
-const fs = require('fs');
-const { WebDriver } = require('selenium-webdriver');
-const { Executor, HttpClient } = require('selenium-webdriver/http');
-const Session = require('./session');
-const UddStore = require('./udd-store');
+import * as fetch from 'node-fetch';
+import * as child_process from 'child_process';
+import { WebDriver } from 'selenium-webdriver';
+import { Executor, HttpClient } from "selenium-webdriver/http";
+import { Session } from './session';
+import { UddStore } from './udd-store';
 
 /**
  * Interfaces with a selenium standalone server version 3.141.59 for basic operations
  * including starting the server, listing sessions, and killing them
  */
-class SeleniumServer {
+export class SeleniumServer {
+    port: number;
+    url: string;
+    _pid: any;
     /**
      * Stores port into `this.port` and creates convenience field `this.url`
-     * @param {number} [port] defaults to 4444 
+     * @param {number} [port] Defaults to 4444 
      */
-    constructor(port) {
+    constructor(port: number) {
         this.port = port ? port : 4444
         this.url = "http://localhost:" + this.port + "/wd/hub";
     }
@@ -23,8 +25,8 @@ class SeleniumServer {
     /**
      * @returns {Promise<boolean>} whether a selenium server at this.port responds or not
      */
-    isAlive() {
-        return fetch(this.url + '/status')
+    isAlive(): Promise<boolean> {
+        return fetch.default(this.url + '/status')
             .then(res => res.json())
             .then(json => json.status === 0 && json.value.ready && json.value.message === 'Server is running')
             .catch(() => false);
@@ -37,14 +39,17 @@ class SeleniumServer {
      * @param session_timeout in seconds. Defaults to 5782349 (~ 70 days)
      * @returns {Promise<boolean>} whether succesful or not
      */
-    async start(jar, chromedriver, geckodriver, session_timeout) {
+    async start(jar: string, chromedriver: string, geckodriver: string, 
+        session_timeout?: number): Promise<boolean> {
         if (await this.isAlive()) {
             return true;
         }
         //retrive commmand
-        let cmd = SeleniumServer._getJavaLaunchServerCommand(jar, chromedriver, geckodriver, session_timeout, this.port);
+        let cmd = SeleniumServer._getJavaLaunchServerCommand(jar, chromedriver, 
+            geckodriver, session_timeout, this.port);
         //launch it
-        let subprocess = child_process.spawn(cmd.command, cmd.args, { detached: true, cwd: __dirname });
+        let subprocess = child_process.spawn(cmd.command, cmd.args, 
+            { detached: true, cwd: __dirname });
         //examine whether succesful
         let launched = new Promise((res) => {
             subprocess.stderr.on("data", (data) => {
@@ -81,9 +86,8 @@ class SeleniumServer {
     /**
      * Quits every running session, and shuts down the server __if this SeleniumServer instance
      * previously effectively started one__
-     * 
      */
-    async stop() {
+    async stop(): Promise<void> {
         await this.killAll();
 
         let p = Promise.resolve();
@@ -99,8 +103,8 @@ class SeleniumServer {
      * @param {number} port 
      * @returns {Promise<boolean>} whether has killed anything or not
      */
-    //this method might bug if multiple java processes found listening on same port ?
-    static _stopJavaProcessesOccupyingPort(port) {
+    //TODO? - this method might bug if multiple java processes found listening on same port ?
+    static _stopJavaProcessesOccupyingPort(port: number): Promise<boolean> {
         //command : that gets tcp connections, who 'LISTEN', on port `port` ($4 corresponds PORT), where ps -o comm= -p du pid as procname, where procname contient java, affiche $2, aka $9 ----> pid
         let command = `netstat -anvp tcp | grep LISTEN | awk '$4 ~ /\\.${port}/' | awk '{"ps -o comm= -p " $9 | getline procname; print $4 " " $9 " " procname}'| awk  '$3 ~ /java/' | awk '{print $2}'`
 
@@ -144,9 +148,9 @@ class SeleniumServer {
      * Will throw FetchError inside returned promise if selenium server is not alive.
      * @returns {Promise<Session[]>} 
      */
-    async list() {
+    async list(): Promise<Session[]> {
         /** @type {Session[]} */
-        let sessions = await fetch(this.url + '/sessions')
+        let sessions = await fetch.default(this.url + '/sessions')
             .then(res => res.json())
             .then(res => res.value)
             .then(res => res.map(el => new Session(
@@ -164,11 +168,11 @@ class SeleniumServer {
      * 
      * Will throw FetchError inside returned promise if selenium server is not alive.
      * 
-     * @returns {Promise<void>} a promise that resolves once its done
+     * @returns {Promise<void[]>} a promise that resolves once its done
      * @param {Session[]} sessions 
      */
-    kill(sessions) {
-        return Promise.all(sessions.map(async(s) => {
+    kill(sessions: Session[]): Promise<void[]> {
+        return Promise.all(sessions.map(async (s) => {
             return s.driver().quit();
         }));
     }
@@ -177,15 +181,11 @@ class SeleniumServer {
      * List sessions alive and kills them all.
      * 
      * Will throw FetchError inside returned promise if selenium server is not alive.
-     * @returns {Promise<void>} a promise that resolves once its done
+     * @returns {Promise<void[]>} a promise that resolves once its done
      */
-    async killAll() {
+    async killAll(): Promise<void[]> {
         return this.kill(await this.list());
     }
-
-    //TODO method for shutting down the server
-
-
 
 
     // Private
@@ -197,7 +197,8 @@ class SeleniumServer {
      * @param {number?} [session_timeout] in seconds. Defaults to `5782349` (~ 70 days)
      * @param {number} [port] the port on which to expose selenium server, defaults to 4444 
      */
-    static _getJavaLaunchServerCommand(jar, chromedriver, geckodriver, session_timeout, port) {
+    private static _getJavaLaunchServerCommand(jar: string, chromedriver: string, 
+        geckodriver: string, session_timeout?: number, port?: number) {
         if (session_timeout === undefined || session_timeout === null) {
             session_timeout = 5782349;
         }
@@ -221,5 +222,3 @@ class SeleniumServer {
         return { command, args };
     }
 }
-
-module.exports = SeleniumServer;

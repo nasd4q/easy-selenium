@@ -4,4 +4,5 @@ test/_resources/
 coverage/
 .nyc_output/
 _temp/
+*.tgz
 
